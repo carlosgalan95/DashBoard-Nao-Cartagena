@@ -2,90 +2,104 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
 
-# --- 1. CONFIGURACIÓN DE PÁGINA Y ESTILOS ---
+# --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
     page_title="Análisis de Inversión Hotelera",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Inyectamos CSS para replicar el estilo 'Slate/Indigo' de Tailwind
+# --- 2. ESTILOS CSS AVANZADOS (THEME OVERRIDE) ---
+# Esto fuerza el look "Clean White" similar a tu React App
 st.markdown("""
 <style>
-    /* Fondo general */
-    .stApp {
-        background-color: #f8fafc; /* slate-50 */
-        font-family: 'sans-serif';
+    /* Forzar modo claro en la app */
+    [data-testid="stAppViewContainer"] {
+        background-color: #f8fafc; /* Slate-50 */
     }
     
-    /* Headers */
-    h1, h2, h3 {
-        color: #0f172a; /* slate-900 */
-    }
-    
-    /* KPI Cards personalizadas */
-    .kpi-card {
-        background-color: white;
-        padding: 1.5rem;
-        border-radius: 0.75rem;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    }
-    .kpi-title {
-        font-size: 0.875rem;
-        color: #64748b; /* slate-500 */
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    .kpi-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #0f172a; /* slate-900 */
-        margin-top: 0.5rem;
-    }
-    .kpi-sub {
-        font-size: 0.75rem;
-        color: #94a3b8;
-        margin-top: 0.25rem;
-    }
-    
-    /* Ajustes sidebar */
-    section[data-testid="stSidebar"] {
+    /* Sidebar blanca */
+    [data-testid="stSidebar"] {
         background-color: #ffffff;
         border-right: 1px solid #e2e8f0;
     }
     
-    /* Botones y sliders */
+    /* Textos generales */
+    h1, h2, h3, p, div, label, span {
+        color: #0f172a !important; /* Slate-900 */
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* TARJETAS PERSONALIZADAS (CSS para imitar tus cards de React) */
+    .custom-card {
+        background-color: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    .custom-card:hover {
+        border-color: #6366f1; /* Indigo-500 hover */
+    }
+    .card-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b; /* Slate-500 */
+        margin-bottom: 8px;
+    }
+    .card-value {
+        font-size: 24px;
+        font-weight: 800;
+        color: #1e293b; /* Slate-800 */
+        margin: 0;
+    }
+    .card-subtitle {
+        font-size: 11px;
+        color: #94a3b8; /* Slate-400 */
+        margin-top: 4px;
+        font-weight: 500;
+    }
+    .trend-up {
+        color: #10b981;
+        font-size: 10px;
+        font-weight: bold;
+        background: #ecfdf5;
+        padding: 2px 6px;
+        border-radius: 999px;
+        float: right;
+    }
+    
+    /* Ajustes de Sliders para que sean Indigo */
     div.stSlider > div[data-baseweb="slider"] > div > div {
-        background-color: #4f46e5 !important; /* indigo-600 */
+        background-color: #4f46e5 !important;
+    }
+    div.stSlider > div[data-baseweb="slider"] > div > div[role="slider"] {
+        background-color: #4f46e5 !important;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONSTANTES Y LÓGICA FINANCIERA ---
-INITIAL_INVESTMENT = 1500000000  # Ejemplo: 1.5B COP
+# --- 3. LÓGICA DE NEGOCIO (Igual que antes) ---
+INITIAL_INVESTMENT = 11739010000 
 
-# Generamos datos históricos simulados
 def get_historical_data():
     dates = pd.date_range(start='2021-01-01', end='2025-12-31', freq='M')
-    # Simulamos una curva de crecimiento con estacionalidad
-    base_revenue = 15000000 # 15M base mensual
-    trend = np.linspace(0, 10000000, len(dates)) # Crecimiento lineal
-    seasonality = np.sin(np.linspace(0, 8*np.pi, len(dates))) * 5000000 # Estacionalidad
-    values = base_revenue + trend + seasonality + np.random.normal(0, 1000000, len(dates))
-    
+    base_revenue = 120000000 # Escala ajustada a tu imagen (millones)
+    trend = np.linspace(0, 50000000, len(dates))
+    seasonality = np.sin(np.linspace(0, 8*np.pi, len(dates))) * 30000000
+    values = base_revenue + trend + seasonality + np.random.normal(0, 5000000, len(dates))
     df = pd.DataFrame({'date': dates, 'value': values})
     df['year'] = df['date'].dt.year
     return df
 
-# Función de proyección
 def generate_projections(ipc_rate, growth_factor, years_to_project, last_real_monthly_avg):
     future_dates = pd.date_range(start='2026-01-01', periods=years_to_project*12, freq='M')
-    
-    # Factores mensuales
     monthly_ipc = (1 + ipc_rate/100)**(1/12) - 1
     monthly_growth = (1 + growth_factor/100)**(1/12) - 1
     
@@ -93,210 +107,105 @@ def generate_projections(ipc_rate, growth_factor, years_to_project, last_real_mo
     current_val = last_real_monthly_avg
     
     for date in future_dates:
-        # Base de crecimiento
         current_val = current_val * (1 + monthly_ipc + monthly_growth)
-        
-        # Añadimos estacionalidad
-        season_factor = np.sin((date.month / 12) * 2 * np.pi) * 0.15 # +/- 15% estacionalidad
-        
+        season_factor = np.sin((date.month / 12) * 2 * np.pi) * 0.15
         base_proj = current_val * (1 + season_factor)
         
         projections.append({
             'date': date,
             'year': date.year,
-            'pessimistic': base_proj * 0.85, # Escenarios
+            'pessimistic': base_proj * 0.85,
             'moderate': base_proj,
             'optimistic': base_proj * 1.20
         })
-    
-    # ESTA ES LA LINEA QUE SE TE ESTABA CORTANDO
     return pd.DataFrame(projections)
 
-# Formateadores
 def format_currency(val):
-    return f"${val:,.0f}"
+    return f"$ {val:,.0f}"
 
 def format_percent(val):
     return f"{val*100:.2f}%"
 
-# --- 3. ESTADO Y CONTROLADORES ---
-
-# Cargar datos históricos
+# Datos
 df_history = get_historical_data()
 last_year_total = df_history[df_history['year'] == 2025]['value'].sum()
 last_monthly_avg = df_history[df_history['year'] == 2025]['value'].mean()
 
-# --- SIDEBAR (Panel de Control) ---
+# --- 4. SIDEBAR ---
 with st.sidebar:
-    # Usamos un icono genérico si la imagen falla
-    st.markdown("### 🏨 Panel de Control")
-    st.caption("Ajuste de variables macroeconómicas")
+    st.markdown("<h3 style='color:#4f46e5!important;'>⚙️ PANEL DE CONTROL</h3>", unsafe_allow_html=True)
+    st.markdown("---")
     
-    st.divider()
+    ipc_rate = st.slider("IPC Anual Esperado", 0.0, 15.0, 4.5, 0.1)
+    st.caption("Ajuste de inflación para tarifas y costos del hotel.")
     
-    ipc_rate = st.slider("IPC Anual Esperado (%)", 0.0, 15.0, 4.5, 0.1, help="Ajuste de inflación para tarifas")
-    growth_factor = st.slider("Crecimiento Orgánico (%)", -5.0, 10.0, 2.0, 0.5, help="Mejora en ocupación")
-    years_to_project = st.slider("Años de Proyección", 1, 25, 10, 1)
+    growth_factor = st.slider("Crecimiento Orgánico", -5.0, 10.0, 0.0, 0.5)
+    st.caption("Factor de mejora en ocupación y eficiencia.")
     
-    st.divider()
+    years_to_project = st.slider("Años de Proyección", 1, 15, 5, 1)
     
-    st.subheader("Visualización")
-    col_view1, col_view2 = st.columns(2)
-    view_mode = col_view1.radio("Unidad", ["$ COP", "% Rend"], index=0, label_visibility="collapsed")
-    time_granularity = col_view2.radio("Frecuencia", ["Anual", "Mensual"], index=0, label_visibility="collapsed")
+    st.markdown("---")
+    col_v1, col_v2 = st.columns(2)
+    view_mode = col_v1.radio("MONEDA", ["$ COP", "% Rend"], label_visibility="collapsed")
+    time_granularity = col_v2.radio("FRECUENCIA", ["Anual", "Mensual"], index=1, label_visibility="collapsed")
 
-# --- CÁLCULOS PRINCIPALES ---
+# Cálculos
 df_proj = generate_projections(ipc_rate, growth_factor, years_to_project, last_monthly_avg)
-
-# Agregación según granularidad
-if time_granularity == "Anual":
-    # Agrupar historia
-    chart_hist = df_history.groupby('year')['value'].sum().reset_index()
-    chart_hist['date'] = chart_hist['year'].astype(str)
-    
-    # Agrupar proyección
-    chart_proj = df_proj.groupby('year')[['pessimistic', 'moderate', 'optimistic']].sum().reset_index()
-    chart_proj['date'] = chart_proj['year'].astype(str)
-    
-    div_factor = 1 # Para cálculos de ROI
-else:
-    chart_hist = df_history.copy()
-    chart_proj = df_proj.copy()
-    div_factor = 12
-
-# KPIs calculados
 avg_yield = last_year_total / INITIAL_INVESTMENT
 cumulative_rev = df_proj['moderate'].sum()
 cumulative_yield = cumulative_rev / INITIAL_INVESTMENT
 
-# --- 4. INTERFAZ PRINCIPAL ---
+if time_granularity == "Anual":
+    chart_hist = df_history.groupby('year')['value'].sum().reset_index()
+    chart_hist['date'] = chart_hist['year'].astype(str)
+    chart_proj = df_proj.groupby('year')[['pessimistic', 'moderate', 'optimistic']].sum().reset_index()
+    chart_proj['date'] = chart_proj['year'].astype(str)
+else:
+    chart_hist = df_history.copy()
+    chart_proj = df_proj.copy()
+
+# --- 5. INTERFAZ PRINCIPAL ---
 
 # Header
-c1, c2 = st.columns([3, 1])
-with c1:
-    st.title("Análisis de Inversión Hotelera")
-    st.caption("Rentabilidad y Proyecciones Dinámicas (Portado a Python)")
-with c2:
-    st.metric(label="Inversión Inicial", value=format_currency(INITIAL_INVESTMENT))
-
-st.markdown("---")
-
-# Sección KPI (Grid layout)
-k1, k2, k3, k4 = st.columns(4)
-
-def kpi_card(col, title, value, subtitle):
-    with col:
-        st.markdown(f"""
-        <div class="kpi-card">
-            <div class="kpi-title">{title}</div>
-            <div class="kpi-value">{value}</div>
-            <div class="kpi-sub">{subtitle}</div>
+col_h1, col_h2 = st.columns([3, 1])
+with col_h1:
+    st.markdown(f"""
+    <div style="display:flex; align-items:center; gap:10px;">
+        <div style="background:#4f46e5; padding:8px; border-radius:8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4 8 4v14"/><path d="M5 7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
         </div>
-        """, unsafe_allow_html=True)
+        <div>
+            <h2 style="margin:0; font-size:20px; font-weight:700;">Análisis de Inversión Hotelera</h2>
+            <p style="margin:0; font-size:12px; color:#64748b;">Rentabilidad y Proyecciones Dinámicas</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-kpi_card(k1, "Ingresos Reales (2025)", format_currency(last_year_total), "Cierre último año histórico")
-kpi_card(k2, "Rendimiento Actual", format_percent(avg_yield), "ROI actual vs Inversión")
-kpi_card(k3, f"Proyección Final ({2025 + years_to_project})", 
-         format_currency(chart_proj.iloc[-1]['moderate']), "Escenario Moderado")
-kpi_card(k4, f"Total Acumulado (2026+)", format_currency(cumulative_rev), 
-         f"Rentabilidad: {format_percent(cumulative_yield)}")
+with col_h2:
+    st.markdown(f"""
+    <div style="text-align:right;">
+        <div style="font-size:10px; font-weight:bold; color:#94a3b8; text-transform:uppercase;">Inversión Inicial</div>
+        <div style="font-size:16px; font-weight:bold; color:#4f46e5;">{format_currency(INITIAL_INVESTMENT)}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
 
-# --- GRÁFICOS (Plotly en lugar de Recharts) ---
-st.subheader("Proyección de Rentabilidad")
+# --- TARJETAS PERSONALIZADAS (HTML) ---
+# Usamos columnas de Streamlit pero inyectamos HTML dentro para el diseño de tarjetas
+c1, c2, c3, c4 = st.columns(4)
 
-# Preparar datos para Plotly
-fig = go.Figure()
+def render_html_card(col, title, value, subtitle, trend=None):
+    trend_html = f'<span class="trend-up">↑ {trend}</span>' if trend else ''
+    html = f"""
+    <div class="custom-card">
+        <div class="card-title">{title} {trend_html}</div>
+        <div class="card-value">{value}</div>
+        <div class="card-subtitle">{subtitle}</div>
+    </div>
+    """
+    col.markdown(html, unsafe_allow_html=True)
 
-# 1. Datos Históricos (Línea sólida)
-# Si es modo porcentaje, dividimos por inversión inicial
-y_hist = chart_hist['value'] if view_mode == "$ COP" else chart_hist['value'] / INITIAL_INVESTMENT
-fig.add_trace(go.Scatter(
-    x=chart_hist['date'], y=y_hist,
-    mode='lines', name='Real',
-    line=dict(color='#4f46e5', width=4),
-    fill='tozeroy', fillcolor='rgba(79, 70, 229, 0.1)'
-))
-
-# 2. Proyecciones
-y_opt = chart_proj['optimistic'] if view_mode == "$ COP" else chart_proj['optimistic'] / INITIAL_INVESTMENT
-y_mod = chart_proj['moderate'] if view_mode == "$ COP" else chart_proj['moderate'] / INITIAL_INVESTMENT
-y_pes = chart_proj['pessimistic'] if view_mode == "$ COP" else chart_proj['pessimistic'] / INITIAL_INVESTMENT
-
-# Pesimista (Línea punteada roja)
-fig.add_trace(go.Scatter(
-    x=chart_proj['date'], y=y_pes,
-    mode='lines', name='Pesimista',
-    line=dict(color='#ef4444', width=2, dash='dash')
-))
-
-# Moderado (Línea sólida verde)
-fig.add_trace(go.Scatter(
-    x=chart_proj['date'], y=y_mod,
-    mode='lines', name='Moderado',
-    line=dict(color='#10b981', width=3)
-))
-
-# Optimista (Línea + Área ambar)
-fig.add_trace(go.Scatter(
-    x=chart_proj['date'], y=y_opt,
-    mode='lines', name='Optimista',
-    line=dict(color='#f59e0b', width=2),
-    fill='tonexty', fillcolor='rgba(245, 158, 11, 0.1)' # Relleno suave hacia la traza anterior
-))
-
-fig.update_layout(
-    xaxis_title="Período",
-    yaxis_title=view_mode,
-    template="plotly_white",
-    hovermode="x unified",
-    margin=dict(l=20, r=20, t=20, b=20),
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-)
-
-st.plotly_chart(fig, use_container_width=True)
-
-# --- TABLA DE DATOS ---
-st.subheader("Tabla Detallada")
-
-# Formatear el DataFrame para mostrar
-display_df = chart_proj.copy()
-display_df = display_df[['date', 'pessimistic', 'moderate', 'optimistic']]
-display_df.columns = ['Período', 'Esc. Pesimista', 'Esc. Moderado', 'Esc. Optimista']
-
-# Configuración de columnas para st.dataframe
-column_config = {
-    "Período": st.column_config.TextColumn("Período"),
-    "Esc. Pesimista": st.column_config.NumberColumn(
-        "Pesimista", format="$%d" if view_mode == "$ COP" else "%.2f%%"
-    ),
-    "Esc. Moderado": st.column_config.NumberColumn(
-        "Moderado", format="$%d" if view_mode == "$ COP" else "%.2f%%"
-    ),
-    "Esc. Optimista": st.column_config.NumberColumn(
-        "Optimista", format="$%d" if view_mode == "$ COP" else "%.2f%%"
-    ),
-}
-
-# Si estamos en modo porcentaje, transformar datos antes de mostrar
-if view_mode == "% Rend":
-    cols = ['Esc. Pesimista', 'Esc. Moderado', 'Esc. Optimista']
-    display_df[cols] = (display_df[cols] / INITIAL_INVESTMENT)
-
-st.dataframe(
-    display_df,
-    column_config=column_config,
-    use_container_width=True,
-    hide_index=True,
-    height=400
-)
-
-# Footer
-st.markdown("""
-<div style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 50px;">
-    © 2025 Dashboard Hotelero (Versión Python/Streamlit). Datos de Alta Precisión.
-</div>
-""", unsafe_allow_html=True)
-
-# --- FIN DEL SCRIPT ---
+render_html_card(c1, "INGRESOS REALES (2025)", format_currency(last_year_total), "Cierre último año histórico", "Al alza")
+render_html_card(c2, "RENDIMIENTO ACTUAL", format_percent(avg_yield), "ROI actual vs Inversión")
+render_html_card(c3, f"PROYECCIÓN FINAL ({2025+years_to_project})", format_currency(chart_proj.iloc[-1]['moderate']), "Escenario
