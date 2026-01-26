@@ -85,10 +85,6 @@ def get_historical_data():
 def generate_projections(ipc_rate, growth_factor, years_to_project, last_real_monthly_avg):
     future_dates = pd.date_range(start='2026-01-01', periods=years_to_project*12, freq='M')
     
-   # Función de proyección
-def generate_projections(ipc_rate, growth_factor, years_to_project, last_real_monthly_avg):
-    future_dates = pd.date_range(start='2026-01-01', periods=years_to_project*12, freq='M')
-    
     # Factores mensuales
     monthly_ipc = (1 + ipc_rate/100)**(1/12) - 1
     monthly_growth = (1 + growth_factor/100)**(1/12) - 1
@@ -302,6 +298,4 @@ st.markdown("""
 <div style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 50px;">
     © 2025 Dashboard Hotelero (Versión Python/Streamlit). Datos de Alta Precisión.
 </div>
-
-""", unsafe_allow_html=True)
-
+""", unsafe_allow_html=True)                            
