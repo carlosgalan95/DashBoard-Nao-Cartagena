@@ -298,4 +298,5 @@ st.markdown("""
 <div style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 50px;">
     © 2025 Dashboard Hotelero (Versión Python/Streamlit). Datos de Alta Precisión.
 </div>
+
 """, unsafe_allow_html=True)
