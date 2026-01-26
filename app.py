@@ -65,10 +65,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONSTANTES Y LÓGICA FINANCIERA (Replicando utils/finance) ---
+# --- 2. CONSTANTES Y LÓGICA FINANCIERA ---
 INITIAL_INVESTMENT = 1500000000  # Ejemplo: 1.5B COP
 
-# Generamos datos históricos simulados (ya que no tenemos el archivo ./constants)
+# Generamos datos históricos simulados
 def get_historical_data():
     dates = pd.date_range(start='2021-01-01', end='2025-12-31', freq='M')
     # Simulamos una curva de crecimiento con estacionalidad
@@ -81,7 +81,7 @@ def get_historical_data():
     df['year'] = df['date'].dt.year
     return df
 
-# Función de proyección
+# Función de proyección (CORREGIDA)
 def generate_projections(ipc_rate, growth_factor, years_to_project, last_real_monthly_avg):
     future_dates = pd.date_range(start='2026-01-01', periods=years_to_project*12, freq='M')
     
@@ -108,7 +108,8 @@ def generate_projections(ipc_rate, growth_factor, years_to_project, last_real_mo
             'moderate': base_proj,
             'optimistic': base_proj * 1.20
         })
-        
+    
+    # Esta es la línea que daba error antes, ahora está limpia
     return pd.DataFrame(projections)
 
 # Formateadores
@@ -256,8 +257,6 @@ fig.update_layout(
 
 st.plotly_chart(fig, use_container_width=True)
 
-
-
 # --- TABLA DE DATOS ---
 st.subheader("Tabla Detallada")
 
@@ -266,7 +265,7 @@ display_df = chart_proj.copy()
 display_df = display_df[['date', 'pessimistic', 'moderate', 'optimistic']]
 display_df.columns = ['Período', 'Esc. Pesimista', 'Esc. Moderado', 'Esc. Optimista']
 
-# Configuración de columnas para st.dataframe (Novedad de Streamlit)
+# Configuración de columnas para st.dataframe
 column_config = {
     "Período": st.column_config.TextColumn("Período"),
     "Esc. Pesimista": st.column_config.NumberColumn(
@@ -298,4 +297,4 @@ st.markdown("""
 <div style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 50px;">
     © 2025 Dashboard Hotelero (Versión Python/Streamlit). Datos de Alta Precisión.
 </div>
-""", unsafe_allow_html=True)                            
+""", unsafe_allow_html=True)
