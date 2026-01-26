@@ -81,7 +81,7 @@ def get_historical_data():
     df['year'] = df['date'].dt.year
     return df
 
-# Función de proyección (CORREGIDA)
+# Función de proyección
 def generate_projections(ipc_rate, growth_factor, years_to_project, last_real_monthly_avg):
     future_dates = pd.date_range(start='2026-01-01', periods=years_to_project*12, freq='M')
     
@@ -109,7 +109,7 @@ def generate_projections(ipc_rate, growth_factor, years_to_project, last_real_mo
             'optimistic': base_proj * 1.20
         })
     
-    # Esta es la línea que daba error antes, ahora está limpia
+    # ESTA ES LA LINEA QUE SE TE ESTABA CORTANDO
     return pd.DataFrame(projections)
 
 # Formateadores
@@ -128,8 +128,8 @@ last_monthly_avg = df_history[df_history['year'] == 2025]['value'].mean()
 
 # --- SIDEBAR (Panel de Control) ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3009/3009489.png", width=50) # Icono Hotel Dummy
-    st.title("Panel de Control")
+    # Usamos un icono genérico si la imagen falla
+    st.markdown("### 🏨 Panel de Control")
     st.caption("Ajuste de variables macroeconómicas")
     
     st.divider()
@@ -298,3 +298,5 @@ st.markdown("""
     © 2025 Dashboard Hotelero (Versión Python/Streamlit). Datos de Alta Precisión.
 </div>
 """, unsafe_allow_html=True)
+
+# --- FIN DEL SCRIPT ---
